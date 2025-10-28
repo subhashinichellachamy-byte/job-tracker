@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simple Job Tracker</title>
+<style>
+body { font-family: Arial; background:#f0f2f5; padding:20px; }
+h1 { text-align:center; color:#2b5797; }
+form { background:white; padding:15px; border-radius:10px; margin-bottom:20px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+input, select, textarea { width:100%; padding:8px; margin:5px 0; border-radius:5px; border:1px solid #ccc; box-sizing:border-box; }
+button { padding:8px 12px; border:none; border-radius:5px; background:#2b5797; color:white; cursor:pointer; margin-top:5px; }
+button:hover { background:#1e3c72; }
+.job { background:white; padding:10px; margin:10px 0; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
+.job button { background:#555; margin-top:5px; padding:4px 8px; color:white; border:none; border-radius:4px; cursor:pointer; }
+.job button:hover { background:#333; }
+</style>
+</head>
+<body>
+
+<h1>Simple Job Tracker</h1>
+
+<form id="jobForm">
+  <input type="text" id="company" placeholder="Company" required>
+  <input type="text" id="position" placeholder="Position" required>
+  <select id="status">
+    <option>Applied</option>
+    <option>Interview</option>
+    <option>Selected</option>
+    <option>Rejected</option>
+  </select>
+  <input type="text" id="recruiter" placeholder="Recruiter / Email">
+  <textarea id="notes" placeholder="Notes"></textarea>
+  <button type="submit">Add Job</button>
+</form>
+
+<input type="text" id="searchInput" placeholder="Search by company...">
+
+<div id="jobList"></div>
+
+<script>
+const company = document.getElementById("company");
+const position = document.getElementById("position");
+const status = document.getElementById("status");
+const recruiter = document.getElementById("recruiter");
+const notes = document.getElementById("notes");
+const form = document.getElementById("jobForm");
+const searchInput = document.getElementById("searchInput");
+const jobList = document.getElementById("jobList");
+
+// Initialize jobs
+let jobs = JSON.parse(localStorage.getItem("jobs") || "[]");
+
+// Save jobs to localStorage
+function saveJobs() {
+  localStorage.setItem("jobs", JSON.stringify(jobs));
+}
+
+// Render jobs
+function renderJobs() {
+  const search = searchInput.value.toLowerCase();
+  jobList.innerHTML = "";
+  jobs.filter(j => j.company.toLowerCase().includes(search))
+      .forEach(j => {
+        const div = document.createElement("div");
+        div.className = "job";
+        div.innerHTML = `
+          <strong>${j.company}</strong> — ${j.position} <br>
+          Status: ${j.status}<br>
+          ${j.recruiter ? "Recruiter: " + j.recruiter + "<br>" : ""}
+          ${j.notes ? "Notes: " + j.notes + "<br>" : ""}
+        `;
+        const editBtn = document.createElement("button");
+        editBtn.textContent = "Edit";
+        editBtn.addEventListener("click", () => editJob(j.id));
+        const delBtn = document.createElement("button");
+        delBtn.textContent = "Delete";
+        delBtn.addEventListener("click", () => deleteJob(j.id));
+        div.appendChild(editBtn);
+        div.appendChild(delBtn);
+        jobList.appendChild(div);
+      });
+}
+
+// Add job
+form.addEventListener("submit", e => {
+  e.preventDefault();
+  const newJob = {
+    id: Date.now(),
+    company: company.value,
+    position: position.value,
+    status: status.value,
+    recruiter: recruiter.value,
+    notes: notes.value
+  };
+  jobs.push(newJob);
+  saveJobs();
+  form.reset();
+  renderJobs();
+});
+
+// Delete job
+function deleteJob(id) {
+  jobs = jobs.filter(j => j.id !== id);
+  saveJobs();
+  renderJobs();
+}
+
+// Edit job
+function editJob(id) {
+  const job = jobs.find(j => j.id === id);
+  if (!job) return;
+  company.value = job.company;
+  position.value = job.position;
+  status.value = job.status;
+  recruiter.value = job.recruiter;
+  notes.value = job.notes;
+  jobs = jobs.filter(j => j.id !== id); // remove old entry
+}
+
+// Search filter
+searchInput.addEventListener("input", renderJobs);
+
+// Initial render
+renderJobs();
+</script>
+
+</body>
+</html>
